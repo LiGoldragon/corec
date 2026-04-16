@@ -94,7 +94,7 @@ impl Codegen {
     fn emit_derives(&mut self, has_data: bool) {
         if has_data {
             self.out.push_str(concat!(
-                "#[derive(Debug, Clone, rkyv::Archive, rkyv::Serialize, rkyv::Deserialize)]\n",
+                "#[derive(Debug, Clone, PartialEq, rkyv::Archive, rkyv::Serialize, rkyv::Deserialize)]\n",
                 "#[rkyv(serialize_bounds(",
                     "__S: rkyv::ser::Writer + rkyv::ser::Allocator, ",
                     "__S::Error: rkyv::rancor::Source))]\n",
