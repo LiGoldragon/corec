@@ -1,0 +1,10 @@
+[package]
+name = "corec"
+version = "0.17.0"
+edition = "2021"
+authors = ["Li Goldragon <li@goldragon.criome.net>"]
+description = "corec — core compiler: .aski → Rust with rkyv derives"
+
+[[bin]]
+name = "corec"
+path = "src/main.rs"
