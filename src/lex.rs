@@ -1,13 +1,14 @@
-/// cc lexer — minimal tokenizer for .aski declarations.
+/// corec lexer — tokenizer for .aski domain definitions.
 ///
-/// Only handles: comments (;;), parens, braces, PascalCase identifiers.
-/// No expressions, no sigils, no operators. Just enough for
-/// module/enum/struct declarations.
+/// Handles: comments (;;), parens, braces, brackets,
+/// PascalCase and camelCase identifiers.
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token {
     LParen,
     RParen,
+    LBracket,
+    RBracket,
     LBrace,
     RBrace,
     PascalIdent(String),
@@ -44,6 +45,14 @@ pub fn lex(source: &str) -> Result<Vec<Spanned>, String> {
             }
             b')' => {
                 tokens.push(Spanned { token: Token::RParen, start: pos, end: pos + 1 });
+                pos += 1;
+            }
+            b'[' => {
+                tokens.push(Spanned { token: Token::LBracket, start: pos, end: pos + 1 });
+                pos += 1;
+            }
+            b']' => {
+                tokens.push(Spanned { token: Token::RBracket, start: pos, end: pos + 1 });
                 pos += 1;
             }
             b'{' => {
