@@ -51,7 +51,7 @@ impl Codegen {
     fn emit_variant(&mut self, variant: &EnumVariant) {
         match variant {
             EnumVariant::Bare(name) => {
-                self.out.push_str(&format!("    {},\n", name));
+                self.out.push_str(&format!("    {},\n", escape_variant(name)));
             }
             EnumVariant::Data { name, payload } => {
                 if Self::needs_omit_bounds(payload) {
@@ -126,6 +126,14 @@ impl Codegen {
                 format!("{}<{}>", constructor, args_rust.join(", "))
             }
         }
+    }
+}
+
+fn escape_variant(name: &str) -> String {
+    match name {
+        "Self" => "Self_".to_string(),
+        "Type" => "Type_".to_string(),
+        _ => name.to_string(),
     }
 }
 
