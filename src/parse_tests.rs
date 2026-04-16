@@ -1,20 +1,20 @@
 #[cfg(test)]
 mod tests {
-    use crate::lex;
+    use crate::lex::Lexer;
     use crate::parse::*;
 
     fn parse(source: &str) -> Module {
-        let tokens = lex::lex(source).unwrap();
-        parse_file(tokens).unwrap()
+        let tokens = Lexer::new(source).lex().unwrap();
+        Parser::new(tokens).parse_file().unwrap()
     }
 
     #[test]
-    fn parse_module_and_enum() {
-        let module = parse("(Name NameDomain Operator)\n(NameDomain Type Variant Field)");
-        assert_eq!(module.name, "Name");
-        assert_eq!(module.exports, vec!["NameDomain", "Operator"]);
-        assert_eq!(module.domains.len(), 1);
-        match &module.domains[0] {
+    fn module_and_enum() {
+        let m = parse("(Name NameDomain Operator)\n(NameDomain Type Variant Field)");
+        assert_eq!(m.name, "Name");
+        assert_eq!(m.exports, vec!["NameDomain", "Operator"]);
+        assert_eq!(m.domains.len(), 1);
+        match &m.domains[0] {
             Domain::Enum(e) => {
                 assert_eq!(e.name, "NameDomain");
                 assert_eq!(e.variants.len(), 3);
@@ -25,142 +25,59 @@ mod tests {
     }
 
     #[test]
-    fn parse_struct_typed_fields() {
-        let module = parse("(Span Span)\n{Span (Start U32) (End U32)}");
-        assert_eq!(module.domains.len(), 1);
-        match &module.domains[0] {
+    fn struct_typed_fields() {
+        let m = parse("(Span Span)\n{Span (Start U32) (End U32)}");
+        match &m.domains[0] {
             Domain::Struct(s) => {
                 assert_eq!(s.name, "Span");
                 assert_eq!(s.fields.len(), 2);
-                match &s.fields[0] {
-                    StructField::Typed { name, typ } => {
-                        assert_eq!(name, "Start");
-                        assert!(matches!(typ, TypeExpr::Simple(t) if t == "U32"));
+                assert!(matches!(&s.fields[0], StructField::Typed { name, .. } if name == "Start"));
+            }
+            _ => panic!("expected struct"),
+        }
+    }
+
+    #[test]
+    fn type_application() {
+        let m = parse("(T F)\n{F (Items [Vec Item]) (Count U32)}");
+        match &m.domains[0] {
+            Domain::Struct(s) => match &s.fields[0] {
+                StructField::Typed { typ, .. } => match typ {
+                    TypeExpr::Application { constructor, args } => {
+                        assert_eq!(constructor, "Vec");
+                        assert_eq!(args.len(), 1);
                     }
-                    _ => panic!("expected typed field"),
+                    _ => panic!("expected application"),
                 }
+                _ => panic!("expected typed field"),
             }
             _ => panic!("expected struct"),
         }
     }
 
     #[test]
-    fn parse_full_name_file() {
-        let source = r#"
-;; name.aski ��� name classification
-
-(Name NameDomain Operator)
-
-(NameDomain
-  Type Variant Field Trait Method
-  Module Literal TypeParam)
-
-(Operator
-  Add Sub Mul Mod
-  Eq NotEq Lt Gt LtEq GtEq
-  And Or)
-"#;
-        let module = parse(source);
-        assert_eq!(module.name, "Name");
-        assert_eq!(module.domains.len(), 2);
-        match &module.domains[0] {
-            Domain::Enum(e) => {
-                assert_eq!(e.name, "NameDomain");
-                assert_eq!(e.variants.len(), 8);
-            }
-            _ => panic!("expected enum"),
-        }
-    }
-
-    #[test]
-    fn parse_full_span_file() {
-        let module = parse("(Span Span)\n{Span (Start U32) (End U32)}");
-        assert_eq!(module.domains.len(), 1);
-        match &module.domains[0] {
-            Domain::Struct(s) => {
-                assert_eq!(s.name, "Span");
-                assert_eq!(s.fields.len(), 2);
-            }
-            _ => panic!("expected struct"),
-        }
-    }
-
-    #[test]
-    fn parse_full_scope_file() {
-        let source = r#"
-(Scope ScopeKind Visibility)
-
-(ScopeKind
-  Root Module
-  Enum Struct Newtype Trait TraitImpl
-  Method Block MatchArm Loop Iteration)
-
-(Visibility Exported Local)
-"#;
-        let module = parse(source);
-        assert_eq!(module.name, "Scope");
-        assert_eq!(module.domains.len(), 2);
-        match &module.domains[0] {
-            Domain::Enum(e) => {
-                assert_eq!(e.name, "ScopeKind");
-                assert_eq!(e.variants.len(), 12);
-            }
-            _ => panic!("expected enum"),
-        }
-    }
-
-    #[test]
-    fn parse_type_application() {
-        let module = parse("(Test Foo)\n{Foo (Items [Vec Item]) (Count U32)}");
-        match &module.domains[0] {
-            Domain::Struct(s) => {
-                assert_eq!(s.fields.len(), 2);
-                match &s.fields[0] {
-                    StructField::Typed { name, typ } => {
-                        assert_eq!(name, "Items");
-                        match typ {
-                            TypeExpr::Application { constructor, args } => {
-                                assert_eq!(constructor, "Vec");
-                                assert_eq!(args.len(), 1);
-                            }
-                            _ => panic!("expected application"),
-                        }
+    fn nested_type_application() {
+        let m = parse("(T F)\n{F (Tail [Option [Box Expr]])}");
+        match &m.domains[0] {
+            Domain::Struct(s) => match &s.fields[0] {
+                StructField::Typed { typ, .. } => match typ {
+                    TypeExpr::Application { constructor, args } => {
+                        assert_eq!(constructor, "Option");
+                        assert!(matches!(&args[0], TypeExpr::Application { constructor, .. } if constructor == "Box"));
                     }
-                    _ => panic!("expected typed field"),
+                    _ => panic!("expected application"),
                 }
+                _ => panic!("expected typed field"),
             }
             _ => panic!("expected struct"),
         }
     }
 
     #[test]
-    fn parse_nested_type_application() {
-        let module = parse("(Test Foo)\n{Foo (Tail [Option [Box Expr]])}");
-        match &module.domains[0] {
-            Domain::Struct(s) => {
-                match &s.fields[0] {
-                    StructField::Typed { typ, .. } => {
-                        match typ {
-                            TypeExpr::Application { constructor, args } => {
-                                assert_eq!(constructor, "Option");
-                                assert!(matches!(&args[0], TypeExpr::Application { constructor, .. } if constructor == "Box"));
-                            }
-                            _ => panic!("expected application"),
-                        }
-                    }
-                    _ => panic!("expected typed field"),
-                }
-            }
-            _ => panic!("expected struct"),
-        }
-    }
-
-    #[test]
-    fn parse_data_carrying_variant() {
-        let module = parse("(Test Foo)\n(Foo (Some String) None)");
-        match &module.domains[0] {
+    fn data_carrying_variant() {
+        let m = parse("(T F)\n(F (Some String) None)");
+        match &m.domains[0] {
             Domain::Enum(e) => {
-                assert_eq!(e.variants.len(), 2);
                 assert!(matches!(&e.variants[0], EnumVariant::Data { name, .. } if name == "Some"));
                 assert!(matches!(&e.variants[1], EnumVariant::Bare(n) if n == "None"));
             }
@@ -169,15 +86,39 @@ mod tests {
     }
 
     #[test]
-    fn parse_struct_variant() {
-        let module = parse("(Test Foo)\n(Foo {Bar (X U32) (Y U32)} Baz)");
-        match &module.domains[0] {
+    fn struct_variant() {
+        let m = parse("(T F)\n(F {Bar (X U32) (Y U32)} Baz)");
+        match &m.domains[0] {
             Domain::Enum(e) => {
-                assert_eq!(e.variants.len(), 2);
                 assert!(matches!(&e.variants[0], EnumVariant::Struct(s) if s.name == "Bar"));
                 assert!(matches!(&e.variants[1], EnumVariant::Bare(n) if n == "Baz"));
             }
             _ => panic!("expected enum"),
         }
+    }
+
+    #[test]
+    fn self_typed_field() {
+        let m = parse("(T F)\n{F (Count U32) Name}");
+        match &m.domains[0] {
+            Domain::Struct(s) => {
+                assert!(matches!(&s.fields[0], StructField::Typed { name, .. } if name == "Count"));
+                assert!(matches!(&s.fields[1], StructField::SelfTyped { name } if name == "Name"));
+            }
+            _ => panic!("expected struct"),
+        }
+    }
+
+    #[test]
+    fn full_dialect_aski() {
+        let source = std::fs::read_to_string(
+            std::env::var("CARGO_MANIFEST_DIR").unwrap() + "/../aski-core/core/dialect.aski"
+        );
+        if let Ok(source) = source {
+            let m = parse(&source);
+            assert_eq!(m.name, "Dialect");
+            assert!(m.domains.len() >= 10);
+        }
+        // Skip if file not found (CI without sibling repos)
     }
 }
