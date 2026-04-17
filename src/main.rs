@@ -13,6 +13,10 @@ mod parse;
 mod parse_tests;
 mod codegen;
 mod primitive;
+#[cfg(test)]
+mod codegen_tests;
+#[cfg(test)]
+mod primitive_tests;
 
 use std::fs;
 use std::path::Path;
