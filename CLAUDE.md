@@ -2,7 +2,7 @@
 
 corec reads .aski domain definitions and generates Rust source
 with rkyv derives. It is the bootstrap seed — the generic tool
-that both aski-core and sema-core use to produce their rkyv
+that both aski-core and aski use to produce their rkyv
 contract types.
 
 ## Usage
@@ -18,10 +18,10 @@ Reads all .aski files from input-dir, generates Rust to output-file.
 ```
 corec       — .aski → Rust with rkyv derives (this tool)
 aski-core   — grammar .aski + corec → Rust rkyv types (askicc↔askic contract)
-sema-core   — parse tree .aski + corec → Rust rkyv types (askic↔semac contract)
+aski   — parse tree .aski + corec → Rust rkyv types (askic↔semac contract)
 askicc      — uses aski-core types → rkyv dialect-data-tree
-askic       — uses aski-core (input) + sema-core (output)
-semac       — uses sema-core types only
+askic       — uses aski-core (input) + aski (output)
+semac       — uses aski types only
 ```
 
 corec is one of only two tools that generate Rust. The other
