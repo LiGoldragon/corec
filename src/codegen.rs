@@ -149,17 +149,28 @@ impl Codegen {
             if ch.is_uppercase() && i > 0 { result.push('_'); }
             result.push(ch.to_lowercase().next().unwrap());
         }
+        if Self::is_rust_keyword(&result) {
+            result.push('_');
+        }
+        // Special cases where appending _ isn't idiomatic
         match result.as_str() {
-            "type" => "typ".into(),
-            "trait" => "trait_name".into(),
-            "self" => "self_".into(),
-            "match" => "match_".into(),
-            "loop" => "loop_".into(),
-            "return" => "return_".into(),
-            "move" => "move_".into(),
-            "ref" => "ref_".into(),
-            "mut" => "mut_".into(),
+            "type_" => "typ".into(),
+            "trait_" => "trait_name".into(),
             _ => result,
         }
+    }
+
+    fn is_rust_keyword(s: &str) -> bool {
+        matches!(s,
+            "as" | "async" | "await" | "break" | "const" | "continue"
+            | "crate" | "dyn" | "else" | "enum" | "extern" | "false"
+            | "fn" | "for" | "if" | "impl" | "in" | "let" | "loop"
+            | "match" | "mod" | "move" | "mut" | "pub" | "ref"
+            | "return" | "self" | "static" | "struct" | "super"
+            | "trait" | "true" | "type" | "unsafe" | "use" | "where"
+            | "while" | "yield" | "do" | "abstract" | "become"
+            | "box" | "final" | "macro" | "override" | "priv"
+            | "try" | "typeof" | "unsized" | "virtual"
+        )
     }
 }

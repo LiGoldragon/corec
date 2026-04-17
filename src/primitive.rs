@@ -1,6 +1,6 @@
-/// Primitive types — built from source/primitive.aski.
+/// Primitive types — built from source/primitive.core.
 ///
-/// Three categories parsed from the .aski enum definitions:
+/// Three categories parsed from the .core enum definitions:
 /// - Scalar: bare variants, arity 0 (U32, Bool, String, ...)
 /// - OmitBounds: generic types that need rkyv omit_bounds (Vec, Option, Box)
 /// - Generic: other generic types (Result)
@@ -26,9 +26,9 @@ impl Primitives {
     pub fn load() -> Self {
         let source = include_str!("../source/primitive.core");
         let tokens = Lexer::new(source).lex()
-            .expect("failed to lex primitive.aski");
+            .expect("failed to lex primitive.core");
         let module = Parser::new(tokens).parse_file()
-            .expect("failed to parse primitive.aski");
+            .expect("failed to parse primitive.core");
 
         let mut prims = Primitives {
             rust_names: HashMap::new(),

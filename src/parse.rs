@@ -1,4 +1,4 @@
-/// corec parser — .aski tokens → domain definitions.
+/// corec parser — .core tokens → domain definitions.
 ///
 /// Handles: module, enum (bare/data/struct variants),
 /// struct (typed/self-typed fields), type applications.

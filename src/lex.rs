@@ -1,4 +1,4 @@
-/// corec lexer — tokenizer for .aski domain definitions.
+/// corec lexer — tokenizer for .core domain definitions.
 ///
 /// Zero dependencies. Methods on Lexer struct.
 
