@@ -3,14 +3,19 @@
 /// All methods on Codegen struct.
 
 use crate::parse::{Module, Domain, EnumDef, EnumVariant, StructDef, StructField, TypeExpr};
+use crate::primitive::Primitives;
 
 pub struct Codegen {
     out: String,
+    primitives: Primitives,
 }
 
 impl Codegen {
     pub fn new() -> Self {
-        Codegen { out: String::new() }
+        Codegen {
+            out: String::new(),
+            primitives: Primitives::load(),
+        }
     }
 
     pub fn emit_module(mut self, module: &Module) -> String {
@@ -40,7 +45,7 @@ impl Codegen {
                 self.out.push_str(&format!("    {},\n", Self::escape_variant(name)));
             }
             EnumVariant::Data { name, payload } => {
-                if Self::needs_omit_bounds(payload) {
+                if self.check_omit_bounds(payload) {
                     self.out.push_str(&format!("    {}(#[rkyv(omit_bounds)] {}),\n",
                         Self::escape_variant(name), self.type_to_rust(payload)));
                 } else {
@@ -71,7 +76,7 @@ impl Codegen {
         let vis = if public { "pub " } else { "" };
         match field {
             StructField::Typed { name, typ } => {
-                if Self::needs_omit_bounds(typ) {
+                if self.check_omit_bounds(typ) {
                     self.out.push_str(&format!(
                         "{}#[rkyv(omit_bounds)]\n{}{}{}: {},\n",
                         indent, indent, vis, Self::to_snake(name), self.type_to_rust(typ)
@@ -110,7 +115,7 @@ impl Codegen {
 
     fn type_to_rust(&self, typ: &TypeExpr) -> String {
         match typ {
-            TypeExpr::Simple(name) => Self::map_primitive(name).to_string(),
+            TypeExpr::Simple(name) => self.primitives.map_to_rust(name).to_string(),
             TypeExpr::Application { constructor, args } => {
                 let args_rust: Vec<String> = args.iter()
                     .map(|a| self.type_to_rust(a))
@@ -120,14 +125,12 @@ impl Codegen {
         }
     }
 
-    fn needs_omit_bounds(typ: &TypeExpr) -> bool {
+    fn check_omit_bounds(&self, typ: &TypeExpr) -> bool {
         match typ {
             TypeExpr::Simple(_) => false,
             TypeExpr::Application { constructor, args } => {
-                constructor == "Box"
-                    || constructor == "Vec"
-                    || constructor == "Option"
-                    || args.iter().any(|a| Self::needs_omit_bounds(a))
+                self.primitives.needs_omit_bounds(constructor)
+                    || args.iter().any(|a| self.check_omit_bounds(a))
             }
         }
     }
@@ -137,16 +140,6 @@ impl Codegen {
             "Self" => "Self_".into(),
             "Type" => "Type_".into(),
             _ => name.to_string(),
-        }
-    }
-
-    fn map_primitive(name: &str) -> &str {
-        match name {
-            "U8" => "u8", "U16" => "u16", "U32" => "u32", "U64" => "u64",
-            "I8" => "i8", "I16" => "i16", "I32" => "i32", "I64" => "i64",
-            "F32" => "f32", "F64" => "f64",
-            "Bool" => "bool", "String" => "String",
-            other => other,
         }
     }
 

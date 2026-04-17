@@ -1,5 +1,5 @@
 {
-  description = "corec — core compiler: .aski → Rust with rkyv derives";
+  description = "corec — core compiler: .core → Rust with rkyv derives";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";

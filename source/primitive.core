@@ -1,0 +1,11 @@
+;; primitive.aski — built-in types known to the aski language.
+;;
+;; corec reads this to know what types are primitive.
+;;
+;; Bare variants = scalar types (arity 0).
+;; Data-carrying variants = generic types (arity 1).
+;; Struct variants = generic types (arity = field count).
+
+(Scalar U8 U16 U32 U64 I8 I16 I32 I64 F32 F64 Bool String Char)
+(OmitBounds (Vec Value) (Option Value) (Box Value))
+(Generic {Result (Output Value) (Failure Value)})
