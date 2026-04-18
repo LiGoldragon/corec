@@ -20,7 +20,7 @@ corec       — .core → Rust with rkyv derives (this tool)
 synth-core  — grammar .core + corec → Rust rkyv types (askicc↔askic contract)
 aski-core   — parse tree .core + corec → Rust rkyv types (askic↔veric↔semac contract)
 sema-core   — veric-output .core + corec → Rust rkyv types (veric↔semac contract)
-askicc      — uses synth-core types → dsls.rkyv (dsl tree, all 4 DSLs)
+askicc      — uses synth-core types → dsls.rkyv (domain-data-tree, all 4 DSLs)
 askic       — uses synth-core (input) + aski-core (output)
 veric       — uses aski-core (input) + sema-core (output)
 semac       — uses sema-core types
