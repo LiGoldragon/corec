@@ -1,4 +1,4 @@
-;; primitive.aski — built-in types known to the aski language.
+;; primitive.core — built-in types known to the aski language.
 ;;
 ;; corec reads this to know what types are primitive.
 ;;
