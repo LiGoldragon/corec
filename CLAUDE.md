@@ -81,6 +81,27 @@ eventually be rewritten in aski. `main` is the only exception.
 NOTE: current code has free functions (parse_file, parse_paren,
 parse_brace, emit_module, etc). These need refactoring to methods.
 
+## Known Issues
+
+### to_snake() keyword list is incomplete
+
+`to_snake()` (in the codegen path) escapes a handful of Rust
+keywords when a .core field name collides (type, trait, self,
+match, loop, return, move, ref, mut). It does NOT cover ~30
+other Rust keywords (fn, const, let, for, if, else, where,
+while, break, continue, struct, enum, impl, pub, mod, use,
+unsafe, as, async, await, dyn, extern, in, true, false, crate,
+super, static, do). A .core file that defines a field named
+`Const`, `Match`, or `Where` would generate invalid Rust.
+
+Currently safe because no .core file uses those names, but
+fragile. Two fixes possible: exhaustive keyword list, or
+read the reserved set from a .core data file. Either beats
+hand-maintaining a 9-entry list in Rust source.
+
+(Extracted from Mentci/AUDIT-REPORT.md before that file was
+deleted 2026-04-20.)
+
 ## VCS
 
 Jujutsu (`jj`) mandatory. Git is storage backend only.
